@@ -1,16 +1,26 @@
-crossScalaVersions in Global := Seq("2.12.7", "2.11.12", "2.10.7")
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-scalaVersion in Global := crossScalaVersions.value.head
+lazy val scala213 = "2.13.1"
+lazy val scala212 = "2.12.10"
+lazy val scala211 = "2.11.12"
+lazy val scala210 = "2.10.7"
+lazy val supportedScalaVersions = List(scala213, scala212, scala211, scala210)
 
-organization in Global := "com.hypertino"
+ThisBuild / scalaVersion := scala213
 
-lazy val library = crossProject.settings(publishSettings:_*).settings(
-  name := "inflector",
-  version := "1.0.12",
-  libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % "test",
-  publishArtifact := true,
-  publishArtifact in Test := false
-).jsSettings(
+ThisBuild / organization := "com.hypertino"
+
+lazy val library = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Full) // [Pure, Full, Dummy], default: CrossType.Full
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    name := "inflector",
+    version := "1.0.13",
+    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
+    publishArtifact := true,
+    publishArtifact in Test := false
+).settings(publishSettings:_*)
+.jsSettings(
   // JS-specific settings here
 ).jvmSettings(
   // JVM-specific settings here
@@ -48,6 +58,7 @@ lazy val publishSettings = Seq(
   pgpSecretRing := file("./travis/script/ht-oss-private.asc"),
   pgpPublicRing := file("./travis/script/ht-oss-public.asc"),
   usePgpKeyHex("F8CDEF49B0EDEDCC"),
+  useGpg := false,
   pgpPassphrase := Option(System.getenv().get("oss_gpg_passphrase")).map(_.toCharArray),
   publishMavenStyle := true,
   pomIncludeRepository := { _ => false},
@@ -70,8 +81,6 @@ lazy val `inflector-root` = project
   .settings(publishSettings:_*)
   .aggregate(js, jvm)
   .settings(
-    publish := {},
-    publishLocal := {},
-    publishArtifact in Test := false,
-    publishArtifact := false
+    crossScalaVersions := Nil,
+    publish / skip := true
   )
